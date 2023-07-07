@@ -1,5 +1,5 @@
 import Debug from 'debug';
-import { basename, resolve } from 'path';
+import path, { basename, resolve } from 'path';
 
 import c from '../colors';
 import { promptForPlatformTarget, runTask } from '../common';
@@ -13,6 +13,21 @@ const debug = Debug('capacitor:ios:run');
 export async function runIOS(
   config: Config,
   { target: selectedTarget, scheme: selectedScheme }: RunCommandOptions,
+): Promise<void> {
+  const bazelLabel = config.ios.bazelLabel;
+  if (bazelLabel !== undefined) {
+    await runWithBazel(config, bazelLabel);
+  } else {
+    await runWithXCBuild(
+      config,
+      {target: selectedTarget, scheme: selectedScheme}
+    )
+  }
+}
+
+async function runWithXCBuild(
+  config: Config,
+  { target: selectedTarget, scheme: selectedScheme}: RunCommandOptions,
 ): Promise<void> {
   const target = await promptForPlatformTarget(
     await getPlatformTargets('ios'),
@@ -65,3 +80,22 @@ export async function runIOS(
     async () => runNativeRun(nativeRunArgs),
   );
 }
+
+async function runWithBazel(
+  config: Config,
+  bazelLabel: string,
+): Promise<void> {
+  const bazeliskPath = path.join(config.app.rootDir, "bazelisk");
+  debug('Detected bazelisk at %0', bazeliskPath);
+  const bazeliskArgs = [
+    "run",
+    bazelLabel
+  ];
+  debug('Invoking bazelisk with args: %0', bazeliskArgs);
+  await runTask('Running bazel', async () =>
+    runCommand(bazeliskPath, bazeliskArgs, {
+      cwd: config.ios.nativeProjectDirAbs,
+    }),
+  );
+}
+
