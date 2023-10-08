@@ -304,6 +304,12 @@ export interface CapacitorConfig {
     scheme?: string;
 
     /**
+     * Label to build/run app built with Bazel.
+     * Stops using Xcodebuild and uses Bazel instead when defined.
+     */
+    bazelLabel?: string;
+
+    /**
      * User agent of Capacitor Web View on iOS.
      *
      * Overrides global `overrideUserAgent` option.
